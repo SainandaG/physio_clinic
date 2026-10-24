@@ -1,0 +1,7 @@
+{
+  "name": "Srini Physio Clinics - Movement Is Medicine",
+  "description": "Dynamic healthcare portal and clinic management system for Srini Physio Clinics, featuring patient source tracking, WhatsApp consultation, live queue dispatch, and PostgreSQL/FastAPI architecture.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
