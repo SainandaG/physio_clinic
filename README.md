@@ -47,6 +47,30 @@ On first start the backend creates the tables, the admin account from `ADMIN_EMA
 
 Or with Docker: `docker compose up --build` (development defaults — change the passwords and `SECRET_KEY` before any real use).
 
+## Testing
+
+**Backend tests** (`backend/tests/`, 121 tests). They cover bookings and double-booking protection, closures and doctor leave, appointments, check-in tokens, triage, enquiry booking, patient accounts and privacy, staff permissions and the dashboard. They need PostgreSQL and use their own database (`srini_physio_test`, created automatically on the server in `backend/.env`, or set `TEST_DATABASE_URL`). Every test empties that database, so the suite refuses to run against any database whose name doesn't end in `_test`.
+
+```bash
+cd backend
+pip install -r requirements-dev.txt
+python -m pytest
+```
+
+**Smoke test** for a running deployment (website pages, assets, API, optional admin sign-in):
+
+```bash
+python scripts/smoke_test.py https://<your-service>.onrender.com
+# also check sign-in:
+SMOKE_ADMIN_EMAIL=admin@sriniphysio.com SMOKE_ADMIN_PASSWORD=... python scripts/smoke_test.py https://<your-service>.onrender.com
+```
+
+**CI** (`.github/workflows/ci.yml`) runs on every push and pull request:
+1. the backend tests against a fresh PostgreSQL
+2. a build of the production Docker image, started the way Render starts it, then the smoke test against it
+
+To make Render deploy a push only after both pass, set `autoDeployTrigger: checksPass` in `render.yaml` (or service → Settings → Auto-Deploy → After CI checks pass).
+
 ## Deploy to Render
 
 The repo includes a Render Blueprint (`render.yaml`) and a production `Dockerfile`. They create:
