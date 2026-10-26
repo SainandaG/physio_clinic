@@ -1,0 +1,36 @@
+# Render Blueprint — New → Blueprint → pick this repo.
+# Creates a Postgres database and one web service that serves both the website and the API.
+databases:
+  - name: srini-physio-db
+    databaseName: srini_physio
+    user: srini_physio
+    plan: free          # free databases expire after 30 days — switch to a paid plan before going live
+    region: singapore
+
+services:
+  - type: web
+    name: srini-physio
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free          # free instances sleep after 15 min idle (first request then takes ~1 min)
+    region: singapore
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: srini-physio-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ADMIN_EMAIL
+        value: admin@sriniphysio.com
+      - key: ADMIN_PASSWORD
+        sync: false     # Render asks for this when the Blueprint is created
+      - key: ADMIN_NAME
+        value: Admin
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "60"
+      - key: WHATSAPP_NUMBER
+        value: "917702225124"

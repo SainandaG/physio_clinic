@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+from pathlib import Path
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from sqlalchemy import text, inspect
@@ -82,8 +84,10 @@ def _seed_data():
 
     db = SessionLocal()
     try:
-        # Seed admin
-        if not db.query(User).filter(User.email == settings.ADMIN_EMAIL).first():
+        # Seed admin (never with a blank password — e.g. an unset secret on the host)
+        if not settings.ADMIN_PASSWORD:
+            print("[WARN] ADMIN_PASSWORD is empty — admin account not created")
+        elif not db.query(User).filter(User.email == settings.ADMIN_EMAIL).first():
             admin = User(
                 name=settings.ADMIN_NAME,
                 email=settings.ADMIN_EMAIL,
@@ -134,6 +138,31 @@ def _seed_data():
         db.close()
 
 
-@app.get("/")
-def root():
-    return {"message": "Srini Physio Clinics API", "docs": "/docs"}
+@app.get("/api/health")
+def health():
+    """Liveness check for the host; also confirms the database answers."""
+    with engine.connect() as conn:
+        conn.execute(text("SELECT 1"))
+    return {"status": "ok"}
+
+
+# ── Production: serve the built React app from the same service ────────────────
+# Registered last so every API route above wins. Unknown /api paths stay JSON 404s;
+# any other path that isn't a real file gets index.html so client-side routes work on refresh.
+DIST = Path(settings.FRONTEND_DIST).resolve() if settings.FRONTEND_DIST else None
+
+if DIST and (DIST / "index.html").is_file():
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def spa(full_path: str):
+        if full_path.startswith("api/") or full_path == "api":
+            raise HTTPException(status_code=404, detail="Not found")
+        candidate = (DIST / full_path).resolve()
+        if full_path and candidate.is_file() and candidate.is_relative_to(DIST):
+            # Vite fingerprints everything under /assets, so those can be cached for good
+            cache = "public, max-age=31536000, immutable" if full_path.startswith("assets/") else "public, max-age=3600"
+            return FileResponse(candidate, headers={"Cache-Control": cache})
+        return FileResponse(DIST / "index.html", headers={"Cache-Control": "no-cache"})
+else:
+    @app.get("/")
+    def root():
+        return {"message": "Srini Physio Clinics API", "docs": "/docs"}

@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from typing import List
+from typing import List, Optional
 
 
 class Settings(BaseSettings):
@@ -9,6 +9,10 @@ class Settings(BaseSettings):
     DB_NAME: str = "srini_physio"
     DB_USER: str = "postgres"
     DB_PASSWORD: str = "password"
+    # Hosted Postgres (e.g. Render) provides one connection string; it takes precedence over the DB_* fields
+    DATABASE_URL: Optional[str] = None
+    # Built frontend served by the API in production (single-service deploy); unset in local dev
+    FRONTEND_DIST: Optional[str] = None
 
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
@@ -27,7 +31,7 @@ class Settings(BaseSettings):
 
     model_config = {
         "env_file": ".env",
-        "extra": "ignore",   # Ignore unknown env vars (e.g. old DATABASE_URL)
+        "extra": "ignore",
     }
 
 

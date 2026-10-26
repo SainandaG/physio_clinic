@@ -47,8 +47,26 @@ On first start the backend creates the tables, the admin account from `ADMIN_EMA
 
 Or with Docker: `docker compose up --build` (development defaults — change the passwords and `SECRET_KEY` before any real use).
 
+## Deploy to Render
+
+The repo includes a Render Blueprint (`render.yaml`) and a production `Dockerfile`. They create:
+- **srini-physio-db**: a PostgreSQL database
+- **srini-physio**: one web service that builds the React app and serves it, together with the API, from FastAPI (same origin, so no CORS or API-URL setup)
+
+Steps:
+1. In Render: **New → Blueprint**, connect GitHub and pick this repository.
+2. Enter a strong **ADMIN_PASSWORD** when asked. `SECRET_KEY` is generated for you and `DATABASE_URL` is wired to the database.
+3. Click **Apply**. The first build takes a few minutes. Then open `https://<service>.onrender.com` and sign in at `/login` with `ADMIN_EMAIL` / your password.
+
+Every push to `main` redeploys. Health check: `/api/health`.
+
+Notes:
+- Both resources are on the **free** plan. Free web services sleep after 15 minutes idle (the next visit takes about a minute), and **free databases expire after 30 days**. Move both to paid plans before real patients use it.
+- The admin account is only created on first start. Changing `ADMIN_PASSWORD` later doesn't change an existing account.
+- Custom domain: service → Settings → Custom Domains.
+
 ## Before going live
-- Set a strong `SECRET_KEY` and admin password in `backend/.env` (never commit `.env`)
+- Use a strong admin password (on Render it is set in the Blueprint; locally in `backend/.env`, never committed)
 - Confirm the doctor's full name and qualifications in Admin → Doctors, and approve the treatment wording in `frontend/src/content/treatments.js`
 - Replace the stock treatment photos (`frontend/public/treatments/`, credits in `CREDITS.md`) with real clinic photos via Admin → Services
-- Host the backend and point the frontend's `/api` requests at it
+- Move the Render database and web service off the free plan (see Deploy to Render)
