@@ -101,6 +101,12 @@ def day(offset: int = 7) -> str:
     return (datetime.now(CLINIC_TZ).date() + timedelta(days=offset)).isoformat()
 
 
+def clinic_time(iso: str) -> datetime:
+    """An API timestamp as clinic-local time. The database may hand back UTC (e.g. in CI),
+    so compare instants, never the raw strings."""
+    return datetime.fromisoformat(iso.replace("Z", "+00:00")).astimezone(CLINIC_TZ)
+
+
 def at(date_str: str, hour: int) -> str:
     """ISO datetime for an hour on a clinic-local date."""
     return f"{date_str}T{hour:02d}:00:00+05:30"

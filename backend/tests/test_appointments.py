@@ -1,7 +1,7 @@
 """Front-desk appointment handling: scheduling, overbooking rules, triage, check-in tokens, enquiry booking."""
 import pytest
 
-from tests.conftest import MORNING, NOON, at, day
+from tests.conftest import MORNING, NOON, at, clinic_time, day
 
 
 def create(client, headers, patient_id, when, **extra):
@@ -120,7 +120,7 @@ class TestBookingEnquiries:
         assert len(appts) == 1
         a = appts[0]
         assert (a["status"], a["priority"], a["service"]["name"]) == ("confirmed", "urgent", "Dry Needling")
-        assert a["scheduled_at"].startswith(d)
+        assert clinic_time(a["scheduled_at"]).isoformat().startswith(f"{d}T11:00")
 
     def test_earlier_requests_have_priority_for_a_slot(self, client, admin, enquire):
         d = day()
@@ -135,7 +135,7 @@ class TestBookingEnquiries:
         e = enquire(d, MORNING).json()
         client.post(f"/api/enquiries/{e['id']}/book", headers=admin, json={"slot": "03:00 PM (Afternoon)"})
         appt = client.get("/api/appointments", headers=admin).json()[0]
-        assert appt["scheduled_at"].startswith(f"{d}T15:00")
+        assert clinic_time(appt["scheduled_at"]).isoformat().startswith(f"{d}T15:00")
         assert "moved to" in appt["notes"]
 
     def test_closed_requests_cannot_be_booked(self, client, admin, enquire):
