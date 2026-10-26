@@ -69,7 +69,7 @@ SMOKE_ADMIN_EMAIL=admin@sriniphysio.com SMOKE_ADMIN_PASSWORD=... python scripts/
 1. the backend tests against a fresh PostgreSQL
 2. a build of the production Docker image, started the way Render starts it, then the smoke test against it
 
-To make Render deploy a push only after both pass, set `autoDeployTrigger: checksPass` in `render.yaml` (or service → Settings → Auto-Deploy → After CI checks pass).
+Render deploys a push only after both pass (`autoDeployTrigger: checksPass` in `render.yaml`).
 
 ## Deploy to Render
 
@@ -82,7 +82,7 @@ Steps:
 2. Enter a strong **ADMIN_PASSWORD** when asked. `SECRET_KEY` is generated for you and `DATABASE_URL` is wired to the database.
 3. Click **Apply**. The first build takes a few minutes. Then open `https://<service>.onrender.com` and sign in at `/login` with `ADMIN_EMAIL` / your password.
 
-Every push to `main` redeploys. Health check: `/api/health`.
+Every push to `main` redeploys once CI passes. Health check: `/api/health`.
 
 Notes:
 - Both resources are on the **free** plan. Free web services sleep after 15 minutes idle (the next visit takes about a minute), and **free databases expire after 30 days**. Move both to paid plans before real patients use it.

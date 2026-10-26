@@ -16,7 +16,7 @@ services:
     plan: free          # free instances sleep after 15 min idle (first request then takes ~1 min)
     region: singapore
     healthCheckPath: /api/health
-    autoDeployTrigger: commit   # switch to checksPass once .github/workflows/ci.yml is on GitHub
+    autoDeployTrigger: checksPass   # deploy a push only after GitHub CI passes
     envVars:
       - key: DATABASE_URL
         fromDatabase:
