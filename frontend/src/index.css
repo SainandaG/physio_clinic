@@ -206,7 +206,8 @@ input, select, textarea { font-family: inherit; }
 
 /* Treatment photos — a navy wash keeps stock photos on-brand */
 .treatment-photo, .photo-frame { background: var(--navy-tint); }
-.treatment-photo > img, .photo-frame > img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* The frame sets the shape (aspect-ratio); the photo fills it whatever its own proportions */
+.treatment-photo > img, .photo-frame > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 .treatment-photo { overflow: visible; }
 .treatment-photo > img { transition: transform .6s ease; }
 .treatment-photo::after, .photo-frame::after {

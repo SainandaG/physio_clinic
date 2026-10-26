@@ -76,12 +76,13 @@ def client():
 
 @pytest.fixture(autouse=True)
 def clean_db(client):
-    """Every test starts from a freshly seeded clinic: one admin, one doctor, six services."""
+    """Every test starts from a freshly seeded clinic: one admin, one doctor, six services with their pages."""
     tables = ", ".join(t.name for t in Base.metadata.sorted_tables)
     with engine.begin() as conn:
         conn.execute(text(f"TRUNCATE {tables} RESTART IDENTITY CASCADE"))
     main._seed_data()
     main._assign_default_doctor()
+    main._fill_treatment_pages()
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────

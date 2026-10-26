@@ -7,6 +7,8 @@ from app.routes.dashboard import router as dashboard_router
 from app.routes.schedule import router as schedule_router
 from app.routes.doctors import router as doctors_router
 from app.routes.portal import router as portal_router
+from app.routes.website import content_router, blog_router, seo_router
+from app.routes.summaries import router as summaries_router, public_router as documents_router
 
 __all__ = [
     "auth_router",
@@ -18,4 +20,9 @@ __all__ = [
     "schedule_router",
     "doctors_router",
     "portal_router",
+    "content_router",
+    "blog_router",
+    "seo_router",
+    "summaries_router",
+    "documents_router",
 ]

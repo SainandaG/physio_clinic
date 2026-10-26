@@ -7,12 +7,9 @@ import API from '../api/client';
 import BookingModal from '../components/BookingModal';
 import { FALLBACK_SERVICES, treatmentFor } from '../content/treatments';
 import { clinicToday, prettyDate } from '../utils/slots';
+import { useClinic, useContent, useSeo } from './content';
 
-export const WA_NUMBER = '917702225124';
-export const WA_DISPLAY = '+91 77022 25124';
-export const MAP_LINK = 'https://maps.app.goo.gl/XBcBKuuvjRYdtgMD7';
-export const ADDRESS = 'Masid Banda, Kondapur, Hyderabad';
-export const waHref = (msg) => `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
+export { useClinic, useContent, useSeo };
 
 // ── Booking modal, openable from any page ────────────────────────────────────
 const BookingContext = createContext(() => {});
@@ -84,10 +81,9 @@ export function useScrollReveal(root, key) {
   }, [root, key]);
 }
 
-export function usePageTitle(title) {
-  useEffect(() => {
-    document.title = title ? `${title} | Srini Physio Clinics, Kondapur` : 'Srini Physio Clinics — Sports Physiotherapy in Kondapur, Hyderabad';
-  }, [title]);
+// Pages not meant for search results (account area)
+export function usePageTitle(title, { noindex = true } = {}) {
+  useSeo({ title, noindex });
 }
 
 // ── UI pieces ────────────────────────────────────────────────────────────────
@@ -148,9 +144,10 @@ export function TreatmentCard({ service }) {
   );
 }
 
-export const WhatsAppButton = ({ msg, children = 'WhatsApp us', className = 'btn btn-outline' }) => (
-  <a href={waHref(msg)} target="_blank" rel="noopener" className={className}><TbBrandWhatsapp size={20} /> {children}</a>
-);
+export function WhatsAppButton({ msg, children = 'WhatsApp us', className = 'btn btn-outline' }) {
+  const { waHref } = useClinic();
+  return <a href={waHref(msg)} target="_blank" rel="noopener" className={className}><TbBrandWhatsapp size={20} /> {children}</a>;
+}
 
 export function NextSlotCard({ compact }) {
   const next = useNextSlot();
@@ -167,8 +164,11 @@ export function NextSlotCard({ compact }) {
   );
 }
 
-export function CTABand({ title = 'Ready to get back to what moves you?', text = 'Book an assessment — it takes about a minute.' }) {
+export function CTABand({ title, text }) {
   const book = useBooking();
+  const { home } = useContent();
+  title = title || home.cta_title;
+  text = text || home.cta_text;
   return (
     <section className="section-sm" style={{ background: 'var(--paper)' }}>
       <div className="wrap">

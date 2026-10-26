@@ -4,6 +4,7 @@ import API from '../../api/client';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import SlotPicker from '../../components/SlotPicker';
+import SummaryModal from '../../components/SummaryModal';
 import { clinicToday, toScheduledAt, fromScheduledAt, sendWithOverbook, errorMessage } from '../../utils/slots';
 import {
   STATUS_LABELS, SOURCE_LABELS, PRIORITY_LABELS, triagePriority,
@@ -67,7 +68,8 @@ export default function Appointments() {
   const [search, setSearch]     = useState('');
   const [rescheduling, setRescheduling] = useState(null); // { appt, date, slot }
   const [walkIn, setWalkIn]     = useState(null);         // walk-in form
-  const [chart, setChart]       = useState(null);         // { appt, notes, exercises, follow_up_date, pain_level, priority, newExercise }
+  const [chart, setChart]       = useState(null);
+  const [summaryFor, setSummaryFor] = useState(null);   // { appt, justCompleted }         // { appt, notes, exercises, follow_up_date, pain_level, priority, newExercise }
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const { doctors, multiple } = useDoctors();
@@ -180,6 +182,8 @@ export default function Appointments() {
       const { data } = await API.put(`/api/appointments/${id}`, { status });
       toast.success(status === 'checked_in' ? `Checked in · Token ${data.token_number}` : `Marked as ${STATUS_LABELS[status]}`);
       load();
+      // Treatment over: open the patient's summary so the doctor can add notes and send it
+      if (status === 'completed') setSummaryFor({ appt: data, justCompleted: true });
     } catch (err) { toast.error(errorMessage(err, 'Update failed')); }
   };
 
@@ -278,6 +282,9 @@ export default function Appointments() {
                         className="btn btn-act act-soft-gold">Reschedule</button>
                     )}
                     <button onClick={() => openChart(a)} className="btn btn-act act-soft" title="Clinical chart, exercises & follow-up">📋 Chart</button>
+                    {(a.status === 'in_therapy' || a.status === 'completed') && (
+                      <button onClick={() => setSummaryFor({ appt: a })} className="btn btn-act act-soft" title="Doctor's notes on the letterhead — print or send on WhatsApp">📄 Summary</button>
+                    )}
                     {active(a.status) && a.patient?.phone && (
                       <a href={waLink(a.patient.phone, reminderMessage(a))} target="_blank" rel="noopener" className="btn btn-act btn-wa" title="Send WhatsApp reminder">💬 Remind</a>
                     )}
@@ -466,6 +473,8 @@ export default function Appointments() {
           </form>
         </Modal>
       )}
+
+      {summaryFor && <SummaryModal appt={summaryFor.appt} justCompleted={summaryFor.justCompleted} onClose={() => setSummaryFor(null)} />}
     </div>
   );
 }

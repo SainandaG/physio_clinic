@@ -1,8 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import API from '../../api/client';
 import toast from 'react-hot-toast';
+import SeoFields from '../../components/SeoFields';
+import { errorMessage } from '../../utils/slots';
 
-const EMPTY = { name:'', description:'', icon:'', image_url:'', whatsapp_message:'', is_active:true, display_order:0 };
+const EMPTY = {
+  name:'', description:'', icon:'', image_url:'', whatsapp_message:'', is_active:true, display_order:0,
+  slug:'', about:'', helps_with:[], expect:[], note:'', seo_title:'', seo_description:'',
+};
+const lines = (text) => text.split('\n');
+const slugify = (s) => s.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 export default function Services() {
   const [services, setServices] = useState([]);
@@ -11,30 +18,44 @@ export default function Services() {
   const [form, setForm]         = useState(EMPTY);
   const [selected, setSelected] = useState(null);
   const [saving, setSaving]     = useState(false);
+  const [suffix, setSuffix]     = useState('');
 
   const load = () => {
     setLoading(true);
     API.get('/api/services/all').then(r => setServices(r.data)).finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    API.get('/api/content').then(r => setSuffix(r.data.seo.title_suffix)).catch(() => {});
+  }, []);
 
-  const openEdit = (s) => { setSelected(s); setForm(s); setShowModal(true); };
+  // Nulls from the API become empty strings so every input stays controlled
+  const openEdit = (s) => {
+    setSelected(s);
+    setForm({ ...EMPTY, ...Object.fromEntries(Object.entries(s).filter(([, v]) => v !== null)) });
+    setShowModal(true);
+  };
   const openNew  = ()  => { setSelected(null); setForm(EMPTY); setShowModal(true); };
 
   const handleSave = async (e) => {
     e.preventDefault(); setSaving(true);
+    const body = {
+      ...form,
+      helps_with: form.helps_with.map(x => x.trim()).filter(Boolean),
+      expect: form.expect.map(x => x.trim()).filter(Boolean),
+    };
     try {
       if (selected) {
-        await API.put(`/api/services/${selected.id}`, form);
+        await API.put(`/api/services/${selected.id}`, body);
         toast.success('Service updated');
       } else {
-        await API.post('/api/services', form);
+        await API.post('/api/services', body);
         toast.success('Service created');
       }
       setShowModal(false); load();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Error');
+      toast.error(errorMessage(err, 'Could not save'));
     } finally { setSaving(false); }
   };
 
@@ -80,6 +101,7 @@ export default function Services() {
               <p style={{ color:'var(--muted)', fontSize:'.84rem', lineHeight:1.6, margin:'0 0 18px' }}>{s.description}</p>
               <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
                 <button onClick={() => openEdit(s)} className="btn btn-sm btn-outline">✏️ Edit</button>
+                {s.is_active && s.slug && <a href={`/treatments/${s.slug}`} target="_blank" rel="noopener" className="btn btn-sm btn-outline">↗ View</a>}
                 <button onClick={() => toggleActive(s)} className="btn btn-sm" style={{ background: s.is_active ? 'var(--gold-tint)' : 'var(--navy-tint)', color: s.is_active ? 'var(--gold-deep)' : 'var(--navy)' }}>
                   {s.is_active ? '🙈 Hide' : '👁 Show'}
                 </button>
@@ -93,7 +115,7 @@ export default function Services() {
       {showModal && (
         <div style={{ position:'fixed', inset:0, background:'rgba(16,47,82,.6)', backdropFilter:'blur(4px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:200, padding:20 }}
           onClick={e => { if (e.target === e.currentTarget) setShowModal(false); }}>
-          <div style={{ background:'#fff', borderRadius:24, padding:32, width:'100%', maxWidth:500, boxShadow:'0 24px 64px rgba(0,0,0,.25)', maxHeight:'90vh', overflowY:'auto' }}>
+          <div style={{ background:'#fff', borderRadius:24, padding:32, width:'100%', maxWidth:680, boxShadow:'0 24px 64px rgba(0,0,0,.25)', maxHeight:'90vh', overflowY:'auto' }}>
             <h2 style={{ fontFamily:'Manrope', fontWeight:900, fontSize:'1.3rem', color:'var(--navy)', marginBottom:22 }}>
               {selected ? 'Edit Service' : 'Add Service'}
             </h2>
@@ -114,8 +136,34 @@ export default function Services() {
                 </div>
               </div>
               <div className="field">
-                <label>Description</label>
-                <textarea value={form.description} onChange={e => setForm(p=>({...p,description:e.target.value}))} placeholder="Brief service description" />
+                <label>Summary</label>
+                <textarea value={form.description} onChange={e => setForm(p=>({...p,description:e.target.value}))} placeholder="One sentence shown on the treatment card and under the page title" />
+              </div>
+              <div className="field">
+                <label>Page address</label>
+                <div className="post-slug" style={{ margin: 0 }}>
+                  <span>/treatments/</span>
+                  <input value={form.slug} placeholder={slugify(form.name || 'treatment-name')} onChange={e => setForm(p=>({...p,slug:slugify(e.target.value)}))} />
+                </div>
+                {selected && form.slug !== selected.slug && <span style={{ fontSize:'.76rem', color:'var(--gold-deep)' }}>Changing the address breaks links people have already shared.</span>}
+              </div>
+
+              <div className="cms-group">Treatment page</div>
+              <div className="field">
+                <label>What it is</label>
+                <textarea value={form.about} onChange={e => setForm(p=>({...p,about:e.target.value}))} placeholder="A short explanation in plain language" style={{ minHeight:110 }} />
+              </div>
+              <div className="field">
+                <label>Commonly used for <span style={{ fontWeight:500, textTransform:'none', letterSpacing:0, color:'var(--muted)' }}>— one per line</span></label>
+                <textarea value={form.helps_with.join('\n')} onChange={e => setForm(p=>({...p,helps_with:lines(e.target.value)}))} />
+              </div>
+              <div className="field">
+                <label>What to expect <span style={{ fontWeight:500, textTransform:'none', letterSpacing:0, color:'var(--muted)' }}>— one step per line</span></label>
+                <textarea value={form.expect.join('\n')} onChange={e => setForm(p=>({...p,expect:lines(e.target.value)}))} />
+              </div>
+              <div className="field">
+                <label>“Is it right for me?” note</label>
+                <textarea value={form.note} onChange={e => setForm(p=>({...p,note:e.target.value}))} placeholder="Who it isn't suitable for, or what to tell us first" style={{ minHeight:70 }} />
               </div>
               <div className="field">
                 <label>Photo (optional)</label>
@@ -130,7 +178,11 @@ export default function Services() {
                 <textarea value={form.whatsapp_message} onChange={e => setForm(p=>({...p,whatsapp_message:e.target.value}))}
                   placeholder="Pre-filled WhatsApp message when patient clicks enquire" style={{ minHeight:70 }} />
               </div>
-              <div style={{ display:'flex', gap:12, alignItems:'center', marginBottom:16 }}>
+              <SeoFields title={form.seo_title} description={form.seo_description}
+                onChange={patch => setForm(p => ({ ...p, ...patch }))}
+                fallbackTitle={form.name || 'Treatment'} fallbackDescription={form.description || 'The summary above is used.'}
+                suffix={suffix} path={`/treatments/${form.slug || slugify(form.name || 'treatment-name')}`} />
+              <div style={{ display:'flex', gap:12, alignItems:'center', margin:'16px 0' }}>
                 <label style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', fontWeight:700, fontSize:'.85rem' }}>
                   <input type="checkbox" checked={form.is_active} onChange={e => setForm(p=>({...p,is_active:e.target.checked}))} style={{ width:16, height:16 }} />
                   Visible on website

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
-  LuCalendarCheck, LuClock, LuHourglass, LuDumbbell, LuHistory, LuUser, LuLogOut, LuX, LuTicket, LuStethoscope,
+  LuCalendarCheck, LuClock, LuHourglass, LuDumbbell, LuHistory, LuUser, LuLogOut, LuX, LuTicket, LuStethoscope, LuFileText,
 } from 'react-icons/lu';
 import API from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
@@ -164,6 +164,20 @@ export default function Account() {
                 </>
               ) : <Empty>After your visit, your physiotherapist's home exercises will show here.</Empty>}
             </Panel>
+            {data?.documents?.length > 0 && (
+              <Panel icon={LuFileText} title="My documents">
+                {data.documents.map(d => (
+                  <a key={d.id} href={d.url} target="_blank" rel="noopener" className="acct-row acct-doc">
+                    <span className="icon-tile soft sm"><LuFileText /></span>
+                    <div style={{ flex: 1 }}>
+                      <div className="acct-row-title">{d.title}</div>
+                      <div className="acct-row-meta"><span>{fmtDate(d.created_at)}</span></div>
+                    </div>
+                    <span className="link-arrow">Open PDF</span>
+                  </a>
+                ))}
+              </Panel>
+            )}
             <Panel icon={LuUser} title="Profile">
               <form onSubmit={saveProfile} className="acct-form">
                 <div className="field"><label>Name</label><input value={profile.name} minLength={2} required onChange={e => setProfile(p => ({ ...p, name: e.target.value }))} /></div>

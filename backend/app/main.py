@@ -1,6 +1,6 @@
 from pathlib import Path
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from sqlalchemy import text, inspect
@@ -8,6 +8,7 @@ from app.database import engine, Base, SessionLocal
 from app.routes import (
     auth_router, patients_router, appointments_router,
     services_router, enquiries_router, dashboard_router, schedule_router, doctors_router, portal_router,
+    content_router, blog_router, seo_router, summaries_router, documents_router,
 )
 
 # Import all models so SQLAlchemy can create their tables
@@ -37,6 +38,11 @@ app.include_router(dashboard_router)
 app.include_router(schedule_router)
 app.include_router(doctors_router)
 app.include_router(portal_router)
+app.include_router(content_router)
+app.include_router(blog_router)
+app.include_router(seo_router)
+app.include_router(summaries_router)
+app.include_router(documents_router)
 
 
 @app.on_event("startup")
@@ -46,6 +52,7 @@ def startup():
     _upgrade_schema()
     _seed_data()
     _assign_default_doctor()
+    _fill_treatment_pages()
 
 
 def _upgrade_schema():
@@ -74,6 +81,44 @@ def _assign_default_doctor():
         if lead:
             conn.execute(text("UPDATE appointments SET doctor_id = :d WHERE doctor_id IS NULL"), {"d": lead})
             conn.execute(text("UPDATE enquiries SET doctor_id = :d WHERE doctor_id IS NULL"), {"d": lead})
+
+
+# Card text the first version seeded; replaced by the treatment-page tagline when the page content is filled in
+_FIRST_SEED_DESCRIPTIONS = {
+    "Modalities that support pain management and rehabilitation when clinically appropriate.",
+    "Progressive strength, mobility, balance and conditioning aligned with your goals.",
+    "Hands-on assessment and care, as part of a broader recovery plan.",
+    "A clinician-led technique for selected muscle-related symptoms after screening.",
+    "An optional adjunct some people use for muscle discomfort and recovery.",
+    "Supportive taping to help with movement confidence or symptom management during activity.",
+}
+
+
+def _fill_treatment_pages():
+    """Give every service a URL slug, and the six standard treatments their default page wording,
+    so it can be edited in Admin → Services. Never overwrites wording that has been edited."""
+    from app.models.service import Service
+    from app.content import TREATMENT_DEFAULTS, slugify
+
+    db = SessionLocal()
+    try:
+        taken = {s.slug for s in db.query(Service).filter(Service.slug.isnot(None))}
+        for s in db.query(Service).order_by(Service.id).all():
+            if not s.slug:
+                base = slug = TREATMENT_DEFAULTS.get(s.name, {}).get("slug") or slugify(s.name)
+                n = 2
+                while slug in taken:
+                    slug, n = f"{base}-{n}", n + 1
+                s.slug = slug
+                taken.add(slug)
+            d = TREATMENT_DEFAULTS.get(s.name)
+            if d and s.about is None:
+                s.about, s.helps_with, s.expect, s.note = d["about"], d["helps_with"], d["expect"], d["note"]
+                if not s.description or s.description in _FIRST_SEED_DESCRIPTIONS:
+                    s.description = d["tagline"]
+        db.commit()
+    finally:
+        db.close()
 
 
 def _seed_data():
@@ -127,6 +172,9 @@ def _seed_data():
                 Service(name="Cupping Therapy", icon="⭕", display_order=5,
                     description="An optional adjunct some people use for muscle discomfort and recovery.",
                     whatsapp_message="Hello, I'm interested in Cupping Therapy at Srini Physio Clinics."),
+                Service(name="Chiropractic Care", icon="🦴", display_order=7,
+                    description="Hands-on adjustment of the spine and joints to ease stiffness and help you move freely.",
+                    whatsapp_message="Hello, I'm interested in Chiropractic Care at Srini Physio Clinics."),
                 Service(name="Kinesiology Taping", icon="〰️", display_order=6,
                     description="Supportive taping to help with movement confidence or symptom management during activity.",
                     whatsapp_message="Hello, I'm interested in Kinesiology Taping at Srini Physio Clinics."),
@@ -152,8 +200,10 @@ def health():
 DIST = Path(settings.FRONTEND_DIST).resolve() if settings.FRONTEND_DIST else None
 
 if DIST and (DIST / "index.html").is_file():
+    INDEX_HTML = (DIST / "index.html").read_text(encoding="utf-8")
+
     @app.get("/{full_path:path}", include_in_schema=False)
-    def spa(full_path: str):
+    def spa(full_path: str, request: Request):
         if full_path.startswith("api/") or full_path == "api":
             raise HTTPException(status_code=404, detail="Not found")
         candidate = (DIST / full_path).resolve()
@@ -161,7 +211,16 @@ if DIST and (DIST / "index.html").is_file():
             # Vite fingerprints everything under /assets, so those can be cached for good
             cache = "public, max-age=31536000, immutable" if full_path.startswith("assets/") else "public, max-age=3600"
             return FileResponse(candidate, headers={"Cache-Control": cache})
-        return FileResponse(DIST / "index.html", headers={"Cache-Control": "no-cache"})
+        # Every page gets its own title, description, share tags and schema.org data
+        from app.seo import page_meta, render_index, site_url
+        from app.routes.website import load_content
+        db = SessionLocal()
+        try:
+            content = load_content(db)
+            meta = page_meta(db, "/" + full_path, content, site_url(request))
+        finally:
+            db.close()
+        return HTMLResponse(render_index(INDEX_HTML, meta, content), headers={"Cache-Control": "no-cache"})
 else:
     @app.get("/")
     def root():

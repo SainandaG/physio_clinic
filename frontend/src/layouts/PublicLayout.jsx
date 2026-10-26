@@ -4,13 +4,15 @@ import { LuCalendarCheck, LuMenu, LuX, LuMapPin, LuNavigation, LuLogIn, LuLayout
 import { TbBrandWhatsapp } from 'react-icons/tb';
 import useDoctors, { doctorLabel } from '../utils/useDoctors';
 import { useAuth, isStaff } from '../context/AuthContext';
-import { TREATMENTS } from '../content/treatments';
-import { BookingProvider, useBooking, useScrollReveal, waHref, WA_DISPLAY, MAP_LINK, ADDRESS } from '../site/shared';
+import { treatmentFor } from '../content/treatments';
+import { BookingProvider, useBooking, useScrollReveal, useServices, useClinic } from '../site/shared';
+import { SiteContentProvider } from '../site/content';
 
 const NAV = [
   { label: 'Home', to: '/', end: true },
   { label: 'Treatments', to: '/treatments' },
   { label: 'About', to: '/about' },
+  { label: 'Blog', to: '/blog' },
   { label: 'Contact', to: '/contact' },
 ];
 
@@ -92,6 +94,8 @@ function Header() {
 
 function Footer() {
   const { doctors, lead } = useDoctors();
+  const services = useServices() || [];
+  const clinic = useClinic();
   const col = { fontWeight: 800, color: 'var(--white)', marginBottom: 14, fontSize: '.9rem', letterSpacing: '.04em' };
   const link = { display: 'block', marginBottom: 9, color: 'rgba(255,255,255,.72)' };
   return (
@@ -103,32 +107,48 @@ function Footer() {
         </div>
         <div>
           <div style={col}>Treatments</div>
-          {TREATMENTS.map(t => <Link key={t.slug} to={`/treatments/${t.slug}`} style={link}>{t.name}</Link>)}
+          {services.map(s => <Link key={s.id} to={`/treatments/${treatmentFor(s).slug}`} style={link}>{s.name}</Link>)}
         </div>
         <div>
           <div style={col}>Clinic</div>
           <Link to="/about" style={link}>About</Link>
+          <Link to="/blog" style={link}>Blog</Link>
           <Link to="/contact" style={link}>Contact & FAQs</Link>
           <div style={{ marginTop: 14, color: 'rgba(255,255,255,.6)' }}>{(doctors.length ? doctors : [lead]).map(doctorLabel).join(' · ')}</div>
         </div>
         <div>
           <div style={col}>Visit</div>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}><LuMapPin color="var(--gold)" style={{ flexShrink: 0, marginTop: 3 }} /> {ADDRESS}</div>
-          <a href={waHref('Hello! I would like to book an appointment at Srini Physio Clinics.')} target="_blank" rel="noopener" style={{ ...link, display: 'flex', gap: 8 }}>
-            <TbBrandWhatsapp color="var(--gold)" size={18} /> {WA_DISPLAY}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}><LuMapPin color="var(--gold)" style={{ flexShrink: 0, marginTop: 3 }} /> {clinic.address}</div>
+          <a href={clinic.waHref(`Hello! I would like to book an appointment at ${clinic.name}.`)} target="_blank" rel="noopener" style={{ ...link, display: 'flex', gap: 8 }}>
+            <TbBrandWhatsapp color="var(--gold)" size={18} /> {clinic.phone_display}
           </a>
-          <a href={MAP_LINK} target="_blank" rel="noopener" style={{ ...link, display: 'flex', gap: 8, color: 'var(--gold)', fontWeight: 700 }}><LuNavigation /> Get directions</a>
+          {clinic.opening_hours && <div style={{ marginBottom: 10, color: 'rgba(255,255,255,.6)' }}>{clinic.opening_hours}</div>}
+          <a href={clinic.map_link} target="_blank" rel="noopener" style={{ ...link, display: 'flex', gap: 8, color: 'var(--gold)', fontWeight: 700 }}><LuNavigation /> Get directions</a>
         </div>
       </div>
       <div className="wrap" style={{ marginTop: 44, paddingTop: 22, borderTop: '1px solid rgba(255,255,255,.1)', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, fontSize: '.8rem' }}>
-        <span>© {new Date().getFullYear()} Srini Physio Clinics. Movement is Medicine.</span>
+        <span>© {new Date().getFullYear()} {clinic.name}. Movement is Medicine.</span>
         <Link to="/login" style={{ color: 'rgba(255,255,255,.45)' }}>Patient & staff sign in</Link>
       </div>
     </footer>
   );
 }
 
+function FloatingWhatsApp() {
+  const clinic = useClinic();
+  return (
+    <a href={clinic.waHref(`Hello! I would like to book an appointment at ${clinic.name}.`)}
+      target="_blank" rel="noopener" className="wa-float" title="Chat on WhatsApp" aria-label="Chat on WhatsApp">
+      <TbBrandWhatsapp />
+    </a>
+  );
+}
+
 export default function PublicLayout() {
+  return <SiteContentProvider><PublicShell /></SiteContentProvider>;
+}
+
+function PublicShell() {
   const { pathname } = useLocation();
   const main = useRef(null);
   useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
@@ -141,10 +161,7 @@ export default function PublicLayout() {
       <main ref={main}><Outlet /></main>
       <Footer />
 
-      <a href={waHref('Hello! I would like to book an appointment at Srini Physio Clinics.')}
-        target="_blank" rel="noopener" className="wa-float" title="Chat on WhatsApp" aria-label="Chat on WhatsApp">
-        <TbBrandWhatsapp />
-      </a>
+      <FloatingWhatsApp />
       </div>
 
       <style>{`

@@ -14,6 +14,14 @@ class Service(Base):
     icon = Column(String(10), nullable=True)      # emoji icon
     image_url = Column(String(500), nullable=True)
     whatsapp_message = Column(Text, nullable=True)  # Pre-filled WA message
+    # Treatment page (/treatments/<slug>); description doubles as the card summary
+    slug = Column(String(160), nullable=True, index=True)
+    about = Column(Text, nullable=True)
+    helps_with = Column(JSON, nullable=True)        # list of strings
+    expect = Column(JSON, nullable=True)            # list of strings
+    note = Column(Text, nullable=True)              # "Is it right for me?" caution
+    seo_title = Column(String(200), nullable=True)
+    seo_description = Column(String(300), nullable=True)
     is_active = Column(Boolean, default=True)
     display_order = Column(Integer, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

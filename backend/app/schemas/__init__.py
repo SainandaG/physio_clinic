@@ -97,6 +97,13 @@ class ServiceCreate(BaseModel):
     whatsapp_message: Optional[str] = None
     is_active: bool = True
     display_order: int = 0
+    slug: Optional[str] = None
+    about: Optional[str] = None
+    helps_with: Optional[List[str]] = None
+    expect: Optional[List[str]] = None
+    note: Optional[str] = None
+    seo_title: Optional[str] = Field(None, max_length=200)
+    seo_description: Optional[str] = Field(None, max_length=300)
 
 
 class ServiceUpdate(BaseModel):
@@ -107,6 +114,13 @@ class ServiceUpdate(BaseModel):
     whatsapp_message: Optional[str] = None
     is_active: Optional[bool] = None
     display_order: Optional[int] = None
+    slug: Optional[str] = None
+    about: Optional[str] = None
+    helps_with: Optional[List[str]] = None
+    expect: Optional[List[str]] = None
+    note: Optional[str] = None
+    seo_title: Optional[str] = Field(None, max_length=200)
+    seo_description: Optional[str] = Field(None, max_length=300)
 
 
 class ServiceOut(BaseModel):
@@ -118,9 +132,100 @@ class ServiceOut(BaseModel):
     whatsapp_message: Optional[str]
     is_active: bool
     display_order: int
+    slug: Optional[str] = None
+    about: Optional[str] = None
+    helps_with: Optional[List[str]] = None
+    expect: Optional[List[str]] = None
+    note: Optional[str] = None
+    seo_title: Optional[str] = None
+    seo_description: Optional[str] = None
 
     class Config:
         from_attributes = True
+
+
+# ─── Treatment summaries ────────────────────────────────────────────────────
+
+class SummaryIn(BaseModel):
+    title: Optional[str] = Field(None, max_length=120)
+    findings: Optional[str] = None
+    notes: Optional[str] = None
+    exercises: Optional[List[str]] = None
+    follow_up_date: Optional[date] = None
+
+
+class SummaryOut(BaseModel):
+    id: int
+    patient_id: int
+    appointment_id: Optional[int]
+    doctor_id: Optional[int]
+    title: Optional[str]
+    findings: Optional[str]
+    notes: Optional[str]
+    exercises: Optional[List[str]] = None
+    follow_up_date: Optional[date]
+    auto_created: bool = False
+    send_status: str
+    send_channel: Optional[str]
+    send_error: Optional[str]
+    sent_at: Optional[datetime]
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    url: str = ""                       # the patient's PDF link
+
+    class Config:
+        from_attributes = True
+
+
+# ─── Blog ────────────────────────────────────────────────────────────────────
+
+class BlogPostIn(BaseModel):
+    title: str = Field(min_length=3, max_length=200)
+    slug: Optional[str] = Field(None, max_length=220)      # generated from the title when blank
+    excerpt: Optional[str] = None
+    content: str = ""
+    cover_image_url: Optional[str] = Field(None, max_length=500)
+    author_name: Optional[str] = Field(None, max_length=150)
+    tags: List[str] = []
+    status: str = "draft"                                 # draft | published
+    published_at: Optional[datetime] = None               # set automatically on first publish
+    seo_title: Optional[str] = Field(None, max_length=200)
+    seo_description: Optional[str] = Field(None, max_length=300)
+
+
+class BlogPostOut(BaseModel):
+    id: int
+    title: str
+    slug: str
+    excerpt: Optional[str]
+    content: str
+    cover_image_url: Optional[str]
+    author_name: Optional[str]
+    tags: Optional[List[str]] = None
+    status: str
+    published_at: Optional[datetime]
+    seo_title: Optional[str]
+    seo_description: Optional[str]
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class BlogPostSummary(BaseModel):
+    """List view: everything but the body."""
+    id: int
+    title: str
+    slug: str
+    excerpt: Optional[str]
+    cover_image_url: Optional[str]
+    author_name: Optional[str]
+    tags: Optional[List[str]] = None
+    status: str
+    published_at: Optional[datetime]
+    reading_minutes: int = 1
+    updated_at: Optional[datetime] = None
 
 
 # ─── Doctor ──────────────────────────────────────────────────────────────────
@@ -309,9 +414,17 @@ class PortalRequest(BaseModel):
         from_attributes = True
 
 
+class PortalDocument(BaseModel):
+    id: int
+    title: Optional[str]
+    created_at: datetime
+    url: str
+
+
 class PortalOverview(BaseModel):
     appointments: List[PortalAppointment]
     requests: List[PortalRequest]
+    documents: List[PortalDocument] = []
 
 
 class EnquiryBook(BaseModel):

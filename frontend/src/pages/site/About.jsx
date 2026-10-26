@@ -1,7 +1,10 @@
 import React from 'react';
 import { LuCalendarCheck, LuClipboardList, LuHandshake, LuTrendingUp, LuClock, LuStethoscope, LuShieldCheck, LuDumbbell, LuMessageCircle } from 'react-icons/lu';
 import useDoctors from '../../utils/useDoctors';
-import { usePageTitle, useBooking, PageHero, SectionHeading, CTABand } from '../../site/shared';
+import { useSeo, useContent, useBooking, PageHero, SectionHeading, CTABand } from '../../site/shared';
+
+const STEP_ICONS = [LuClipboardList, LuHandshake, LuTrendingUp];
+const POINT_ICONS = [LuShieldCheck, LuDumbbell, LuMessageCircle, LuClock];
 
 function DoctorCard({ d }) {
   const book = useBooking();
@@ -29,13 +32,13 @@ function DoctorCard({ d }) {
 }
 
 export default function About() {
-  usePageTitle('About');
+  const { about } = useContent();
+  useSeo({ title: about.seo_title || 'About', description: about.seo_description });
   const { doctors, lead } = useDoctors();
   const list = doctors.length ? doctors : [lead];
   return (
     <>
-      <PageHero crumbs={[{ label: 'About' }]} title="Sports physiotherapy, built around your comeback"
-        intro="Srini Physio Clinics in Masid Banda, Kondapur helps athletes and active people recover from injury, manage pain and get back to moving with confidence." />
+      <PageHero crumbs={[{ label: 'About' }]} title={about.hero_title} intro={about.hero_intro} />
 
       <section className="section" style={{ background: 'var(--white)' }}>
         <div className="wrap">
@@ -48,14 +51,9 @@ export default function About() {
 
       <section className="section" style={{ background: 'var(--paper)' }}>
         <div className="wrap">
-          <SectionHeading eyebrow="How we work" title="Simple steps. Personal care."
-            intro="No one-size-fits-all promises — we focus on understanding your needs and agreeing practical next steps with you." />
+          <SectionHeading eyebrow="How we work" title={about.steps_title} intro={about.steps_intro} />
           <div className="grid-3">
-            {[
-              [LuClipboardList, 'Talk & assess', 'Share your symptoms, activity, history and what you want to get back to doing.'],
-              [LuHandshake, 'Agree a plan', 'Discuss suitable treatment, exercise, milestones and when to review progress.'],
-              [LuTrendingUp, 'Track progress', 'Adjust the plan as you respond, with a gradual and safe return to activity.'],
-            ].map(([Icon, title, text], i) => (
+            {about.steps.map(({ title, text }, i) => [STEP_ICONS[i % STEP_ICONS.length], title, text]).map(([Icon, title, text], i) => (
               <div key={title} style={{ background: 'var(--white)', borderRadius: 'var(--radius)', padding: 28, border: '1px solid var(--line)', position: 'relative' }}>
                 <span style={{ position: 'absolute', right: 24, top: 18, fontFamily: 'Manrope', fontWeight: 900, fontSize: '2.6rem', color: 'var(--gold-light)' }}>0{i + 1}</span>
                 <span className="icon-tile"><Icon /></span>
@@ -69,14 +67,9 @@ export default function About() {
 
       <section className="section" style={{ background: 'var(--white)' }}>
         <div className="wrap grid-2" style={{ alignItems: 'center' }}>
-          <SectionHeading eyebrow="What you can expect" title="Care that respects your time and your goals" />
+          <SectionHeading eyebrow="What you can expect" title={about.expect_title} />
           <ul className="check-list" style={{ gap: 18 }}>
-            {[
-              [LuShieldCheck, 'Assessment before treatment — we only recommend what suits you'],
-              [LuDumbbell, 'Exercise-led recovery, with hands-on care where it helps'],
-              [LuMessageCircle, 'Booking, reminders and your home exercise plan on WhatsApp'],
-              [LuClock, 'Live slot availability, so you can pick a time that works'],
-            ].map(([Icon, text]) => (
+            {about.expect_points.map((text, i) => [POINT_ICONS[i % POINT_ICONS.length], text]).map(([Icon, text]) => (
               <li key={text} style={{ fontSize: '1.02rem' }}><span className="icon-tile soft sm" style={{ marginTop: -6 }}><Icon /></span>{text}</li>
             ))}
           </ul>

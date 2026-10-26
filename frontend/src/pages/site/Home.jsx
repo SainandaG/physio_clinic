@@ -7,13 +7,15 @@ import {
 import { TbRun, TbBallFootball, TbCricket, TbBallTennis, TbBarbell, TbStretching, TbYoga } from 'react-icons/tb';
 import useDoctors from '../../utils/useDoctors';
 import {
-  useBooking, useServices, usePageTitle, SectionHeading, TreatmentCard, NextSlotCard, CTABand, WhatsAppButton,
-  MAP_LINK, ADDRESS,
+  useBooking, useServices, useSeo, useContent, useClinic, SectionHeading, TreatmentCard, NextSlotCard, CTABand, WhatsAppButton,
 } from '../../site/shared';
 
 function Hero() {
   const book = useBooking();
   const { lead } = useDoctors();
+  const { home } = useContent();
+  const clinic = useClinic();
+  const doctor = lead.name + (lead.qualification ? `, ${lead.qualification}` : '');
   const visual = useRef(null);
 
   // Gentle 3D tilt of the logo orb following the pointer
@@ -32,22 +34,21 @@ function Hero() {
       <span className="hero-blob hero-blob-2" aria-hidden="true" />
       <div className="wrap grid-2" style={{ alignItems: 'center', padding: 'clamp(48px, 8vw, 96px) 0', gap: 40, position: 'relative' }}>
         <div className="hero-copy">
-          <div className="eyebrow" style={{ marginBottom: 18 }}>Sports physiotherapy · Kondapur</div>
+          <div className="eyebrow" style={{ marginBottom: 18 }}>{home.eyebrow}</div>
           <h1 className="h-display" style={{ fontSize: 'clamp(2.8rem, 6vw, 4.9rem)' }}>
-            <span className="hero-line">Move better.</span><br />
-            <span className="hero-line text-shimmer">Recover stronger.</span>
+            <span className="hero-line">{home.title_line_1}</span><br />
+            <span className="hero-line text-shimmer">{home.title_line_2}</span>
           </h1>
           <p className="lead" style={{ marginTop: 22, maxWidth: 520, fontSize: '1.12rem' }}>
-            Assessment-led physiotherapy for athletes and active people, with {lead.name}
-            {lead.qualification ? `, ${lead.qualification}` : ''}. A clear plan, hands-on care and exercise that gets you back to what you love.
+            {home.intro.replace('{doctor}', doctor)}
           </p>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 30 }}>
             <button onClick={() => book()} className="btn btn-navy btn-lg btn-shine"><LuCalendarCheck /> Book an Assessment</button>
-            <WhatsAppButton msg="Hello! I'd like to book an appointment at Srini Physio Clinics." className="btn btn-outline btn-lg">WhatsApp us</WhatsAppButton>
+            <WhatsAppButton msg={`Hello! I'd like to book an appointment at ${clinic.name}.`} className="btn btn-outline btn-lg">WhatsApp us</WhatsAppButton>
           </div>
           <div style={{ display: 'flex', gap: 22, flexWrap: 'wrap', marginTop: 34, color: 'var(--navy)', fontSize: '.9rem', fontWeight: 600 }}>
             <span style={{ display: 'flex', gap: 8, alignItems: 'center' }}><LuShieldCheck color="var(--gold-dark)" /> MPT Sports & Manual Therapy</span>
-            <a href={MAP_LINK} target="_blank" rel="noopener" style={{ display: 'flex', gap: 8, alignItems: 'center' }}><LuMapPin color="var(--gold-dark)" /> {ADDRESS}</a>
+            <a href={clinic.map_link} target="_blank" rel="noopener" style={{ display: 'flex', gap: 8, alignItems: 'center' }}><LuMapPin color="var(--gold-dark)" /> {clinic.address}</a>
           </div>
         </div>
 
@@ -64,7 +65,7 @@ function Hero() {
             <NextSlotCard />
           </div>
           <div className="float-card float-card-2 badge-gloss" style={{ position: 'absolute', right: '2%', top: '6%' }}>
-            <span className="ping-icon"><LuTarget color="var(--gold)" size={20} /></span> Return-to-sport focus
+            <span className="ping-icon"><LuTarget color="var(--gold)" size={20} /></span> {home.badge}
           </div>
         </div>
       </div>
@@ -74,12 +75,12 @@ function Hero() {
 
 function TreatmentsPreview() {
   const services = useServices();
+  const { home } = useContent();
   return (
     <section className="section" style={{ background: 'var(--white)' }}>
       <div className="wrap">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 20, flexWrap: 'wrap' }}>
-          <SectionHeading eyebrow="Treatments" title="Care chosen after a proper assessment"
-            intro="We start by understanding your movement, symptoms and goals — then combine the treatments that suit you." />
+          <SectionHeading eyebrow="Treatments" title={home.treatments_title} intro={home.treatments_intro} />
           <Link to="/treatments" className="link-arrow" style={{ marginBottom: 44 }}>All treatments <LuArrowRight /></Link>
         </div>
         <div className="grid-3">
@@ -95,14 +96,16 @@ const SPORTS = [
   [TbBarbell, 'Gym & strength'], [LuBike, 'Cycling'], [TbYoga, 'Dance & yoga'], [TbStretching, 'Everyday activity'],
 ];
 
+const STEP_ICONS = [LuClipboardList, LuStethoscope, LuTrendingUp, LuMessageCircle];
+
 function WhoWeHelp() {
+  const { home } = useContent();
   return (
     <section className="section" style={{ background: 'linear-gradient(135deg, var(--navy-dark), var(--navy))', position: 'relative', overflow: 'hidden' }}>
       <img src="/brand/logo-mark-light.png" alt="" aria-hidden="true" style={{ position: 'absolute', left: -80, bottom: -80, width: 420, opacity: .06 }} />
       <div className="wrap grid-2" style={{ alignItems: 'center', position: 'relative' }}>
         <div>
-          <SectionHeading light eyebrow="Made for active lives" title="Your sport is different. Your recovery should be too."
-            intro="Whether you compete, train at the weekend or just want to move without pain, your plan is built around your body, schedule and goals." />
+          <SectionHeading light eyebrow={home.sports_eyebrow} title={home.sports_title} intro={home.sports_intro} />
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: -16 }}>
             {SPORTS.map(([Icon, label]) => (
               <span key={label} className="chip" style={{ background: 'rgba(255,255,255,.07)', color: 'var(--white)', border: '1px solid rgba(255,255,255,.12)' }}>
@@ -112,12 +115,7 @@ function WhoWeHelp() {
           </div>
         </div>
         <div style={{ display: 'grid', gap: 14 }}>
-          {[
-            [LuClipboardList, 'Assess', 'Symptoms, movement, training load and what you want to get back to.'],
-            [LuStethoscope, 'Treat', 'Hands-on care and the right modalities to settle pain and stiffness.'],
-            [LuTrendingUp, 'Rebuild', 'Progressive strength and conditioning for a safe return to activity.'],
-            [LuMessageCircle, 'Stay on track', 'Your home exercise plan on WhatsApp, reviewed as you improve.'],
-          ].map(([Icon, title, text], i) => (
+          {home.steps.map(({ title, text }, i) => [STEP_ICONS[i % STEP_ICONS.length], title, text]).map(([Icon, title, text], i) => (
             <div key={title} style={{ display: 'flex', gap: 16, alignItems: 'center', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 18, padding: '18px 20px' }}>
               <span className="icon-tile ghost"><Icon /></span>
               <div>
@@ -134,6 +132,7 @@ function WhoWeHelp() {
 
 function DoctorFeature() {
   const book = useBooking();
+  const { home } = useContent();
   const { doctors, lead } = useDoctors();
   const d = lead;
   return (
@@ -147,7 +146,7 @@ function DoctorFeature() {
             intro={[d.qualification, d.specialization].filter(Boolean).join(' — ')} />
           {d.bio && <p className="lead" style={{ marginTop: -24, marginBottom: 24 }}>{d.bio}</p>}
           <ul className="check-list" style={{ marginBottom: 28 }}>
-            {['Every plan starts with a thorough assessment', 'Honest advice on what will and won\'t help', 'Exercise-led recovery you can continue at home'].map(t => (
+            {home.doctor_points.map(t => (
               <li key={t}><LuShieldCheck size={20} />{t}</li>
             ))}
           </ul>
@@ -162,7 +161,8 @@ function DoctorFeature() {
 }
 
 export default function Home() {
-  usePageTitle(null);
+  const { home, seo } = useContent();
+  useSeo({ title: home.seo_title || seo.site_title, description: home.seo_description, full: true });
   return (
     <>
       <Hero />

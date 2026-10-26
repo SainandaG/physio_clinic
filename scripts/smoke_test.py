@@ -70,6 +70,24 @@ for asset in assets[:3]:
     status, _, _ = fetch(asset.decode())
     check(f"asset {asset.decode()}", status == 200, str(status))
 
+check("home page has its SEO tags", b'property="og:title"' in home and b'rel="canonical"' in home and b"application/ld+json" in home)
+check("home page preloads site content", b"window.__SITE_CONTENT__" in home)
+status, _, body = fetch("/treatments/dry-needling")
+check("treatment page has its own title", re.search(rb"<title>[^<]*Dry Needling", body) is not None)
+status, _, body = fetch("/admin/dashboard")
+check("admin pages are hidden from search", b"noindex" in body)
+
+status, ctype, body = fetch("/robots.txt")
+check("robots.txt", status == 200 and b"Disallow: /admin" in body and b"Sitemap:" in body, f"{status}")
+status, ctype, body = fetch("/sitemap.xml")
+check("sitemap.xml", status == 200 and "xml" in ctype and b"/treatments/dry-needling</loc>" in body, f"{status} {ctype}")
+status, _, body = fetch("/api/content")
+check("website content API", status == 200 and "home" in json.loads(body), str(status))
+status, _, body = fetch("/api/blog")
+check("blog API", status == 200 and isinstance(json.loads(body), list), str(status))
+status, _, body = fetch("/blog")
+check("blog page loads", status == 200 and b'id="root"' in body, str(status))
+
 status, ctype, _ = fetch("/brand/logo-mark.png")
 check("brand logo served", status == 200 and "image" in ctype, f"{status} {ctype}")
 

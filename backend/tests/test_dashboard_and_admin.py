@@ -72,8 +72,9 @@ class TestDoctors:
 
 
 class TestServices:
-    def test_six_treatments_are_seeded(self, client):
-        assert len(client.get("/api/services").json()) == 6
+    def test_standard_treatments_are_seeded(self, client):
+        names = [s["name"] for s in client.get("/api/services").json()]
+        assert len(names) == 7 and "Chiropractic Care" in names
 
     def test_inactive_services_are_hidden_from_the_website(self, client, admin):
         sid = client.get("/api/services").json()[0]["id"]

@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth, isStaff } from './context/AuthContext';
 import './index.css';
 import './styles/account.css';
+import './styles/website.css';
 
 // Public pages
 import PublicLayout from './layouts/PublicLayout';
@@ -13,6 +14,8 @@ import TreatmentDetail from './pages/site/TreatmentDetail';
 import About from './pages/site/About';
 import Contact from './pages/site/Contact';
 import Account from './pages/site/Account';
+import Blog from './pages/site/Blog';
+import BlogPost from './pages/site/BlogPost';
 import AuthPage from './pages/auth/AuthPage';
 
 // Admin pages
@@ -26,6 +29,8 @@ import Doctors from './pages/admin/Doctors';
 import Services from './pages/admin/Services';
 import Enquiries from './pages/admin/Enquiries';
 import Staff from './pages/admin/Staff';
+import AdminBlog from './pages/admin/Blog';
+import SiteContent from './pages/admin/SiteContent';
 
 const Loading = () => (
   <div style={{ height:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'var(--paper)' }}>
@@ -62,6 +67,8 @@ export default function App() {
             <Route path="/treatments/:slug" element={<TreatmentDetail />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/account" element={<PatientRoute><Account /></PatientRoute>} />
           </Route>
 
@@ -82,6 +89,8 @@ export default function App() {
             <Route path="services"     element={<Services />} />
             <Route path="enquiries"    element={<Enquiries />} />
             <Route path="staff"        element={<Staff />} />
+            <Route path="blog"         element={<AdminBlog />} />
+            <Route path="content"      element={<SiteContent />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

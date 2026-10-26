@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     DATABASE_URL: Optional[str] = None
     # Built frontend served by the API in production (single-service deploy); unset in local dev
     FRONTEND_DIST: Optional[str] = None
+    # Public address for canonical links and the sitemap, e.g. https://sriniphysio.in — defaults to the request host
+    SITE_URL: Optional[str] = None
 
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
@@ -21,7 +23,13 @@ class Settings(BaseSettings):
     ADMIN_EMAIL: str = "admin@sriniphysio.com"
     ADMIN_PASSWORD: str = "Admin@123"
     ADMIN_NAME: str = "Admin"
-    WHATSAPP_NUMBER: str = "917702225124"
+    WHATSAPP_NUMBER: str = "918019141096"
+    # WhatsApp Business Cloud API (Meta) — when both are set, treatment summaries are sent automatically.
+    # Without them staff send summaries with one tap through WhatsApp links.
+    WHATSAPP_API_TOKEN: Optional[str] = None
+    WHATSAPP_PHONE_NUMBER_ID: Optional[str] = None
+    WHATSAPP_SUMMARY_TEMPLATE: str = "treatment_summary"   # approved template: document header + {{1}} patient name
+    WHATSAPP_TEMPLATE_LANG: str = "en"
     SLOT_CAPACITY: int = 1   # patients per time slot (one consulting specialist)
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
 

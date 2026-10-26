@@ -4,8 +4,8 @@ import toast from 'react-hot-toast';
 import { TIME_SLOTS, clinicToday, prettyDate, isSlotConflict } from '../utils/slots';
 import useDoctors, { doctorLabel } from '../utils/useDoctors';
 import { useAuth } from '../context/AuthContext';
+import { useClinic } from '../site/content';
 
-const WA = '917702225124';
 
 const UNAVAILABLE_LABEL = { booked: 'Booked', blocked: 'Unavailable', closed: 'Clinic closed', past: 'Passed' };
 
@@ -39,6 +39,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService = '',
   const [slotError, setSlotError] = useState(null);       // { message, alternatives } after a rejected booking
   const { doctors, lead, multiple } = useDoctors();
   const { user } = useAuth();
+  const clinic = useClinic();
   const doctor = doctors.find(d => String(d.id) === String(form.doctor_id)) || lead;
 
   const loadAvailability = (date, doctorId = form.doctor_id) => {
@@ -141,7 +142,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService = '',
       `Specialist: ${doctorLabel(doctor)}`,
     ].filter(Boolean).join('\n');
 
-    window.open(`https://wa.me/${WA}?text=${encodeURIComponent(waMsg)}`, '_blank', 'noopener,noreferrer');
+    window.open(clinic.waHref(waMsg), '_blank', 'noopener,noreferrer');
     setStep(2);
     setSaving(false);
   };

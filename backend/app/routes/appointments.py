@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
 from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 from typing import Optional, List
@@ -199,6 +199,8 @@ def get_appointment(appt_id: int, db: Session = Depends(get_db), _=Depends(get_c
 def update_appointment(
     appt_id: int,
     data: AppointmentUpdate,
+    request: Request,
+    background: BackgroundTasks,
     force: bool = False,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
@@ -229,9 +231,14 @@ def update_appointment(
     if data.pain_level is not None and data.priority is None and appt.pain_level is None:
         data.priority = triage_priority(data.pain_level)
 
+    just_completed = data.status == "completed" and appt.status != "completed"
     for field, value in data.model_dump(exclude_none=True).items():
         setattr(appt, field, value)
     db.commit()
+    if just_completed:
+        # Treatment over: prepare the patient's summary, and send it if WhatsApp automation is on
+        from app.routes.summaries import after_completion
+        after_completion(db, appt, current_user.id, request, background)
     return _load(db, appt_id)
 
 

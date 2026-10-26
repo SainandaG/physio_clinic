@@ -1,6 +1,6 @@
 """Signed-in patient's own data: appointments, pending booking requests, cancellations."""
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
 from app.auth import require_patient
@@ -14,14 +14,23 @@ CANCELLABLE = ("pending", "confirmed")
 
 
 @router.get("/overview", response_model=PortalOverview)
-def overview(db: Session = Depends(get_db), account=Depends(require_patient)):
+def overview(request: Request, db: Session = Depends(get_db), account=Depends(require_patient)):
     appointments = db.query(Appointment).options(
         joinedload(Appointment.service), joinedload(Appointment.doctor),
     ).filter(Appointment.patient_id == account.patient_id).order_by(Appointment.scheduled_at.desc().nullslast()).all()
     requests = db.query(Enquiry).filter(
         Enquiry.converted_patient_id == account.patient_id, Enquiry.status.in_(("new", "contacted")),
     ).order_by(Enquiry.created_at.desc()).all()
-    return {"appointments": appointments, "requests": requests}
+    from app.models.summary import TreatmentSummary
+    from app.routes.summaries import document_url
+    from app.routes.website import load_content
+    from app.seo import site_url
+    base, title = site_url(request), load_content(db)["letterhead"]["document_title"]
+    summaries = db.query(TreatmentSummary).filter(
+        TreatmentSummary.patient_id == account.patient_id, TreatmentSummary.send_status.in_(("sent", "shared")),
+    ).order_by(TreatmentSummary.created_at.desc()).all()
+    documents = [{"id": s.id, "title": s.title or title, "created_at": s.created_at, "url": document_url(base, s)} for s in summaries]
+    return {"appointments": appointments, "requests": requests, "documents": documents}
 
 
 @router.post("/appointments/{appt_id}/cancel")

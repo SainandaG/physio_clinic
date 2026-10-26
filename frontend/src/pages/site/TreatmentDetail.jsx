@@ -1,10 +1,9 @@
 import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { LuCalendarCheck, LuCheck, LuInfo, LuMapPin, LuArrowLeft } from 'react-icons/lu';
-import { TREATMENTS, treatmentFor } from '../../content/treatments';
+import { treatmentFor } from '../../content/treatments';
 import {
-  usePageTitle, useServices, useBooking, PageHero, TreatmentCard, NextSlotCard, WhatsAppButton, CTABand,
-  MAP_LINK, ADDRESS,
+  useSeo, useClinic, useServices, useBooking, PageHero, TreatmentCard, NextSlotCard, WhatsAppButton, CTABand,
 } from '../../site/shared';
 
 export default function TreatmentDetail() {
@@ -12,10 +11,12 @@ export default function TreatmentDetail() {
   const services = useServices();
   const book = useBooking();
 
-  const service = services?.find(s => treatmentFor(s).slug === slug)
-    || (services && TREATMENTS.some(t => t.slug === slug) ? { name: TREATMENTS.find(t => t.slug === slug).name } : null);
+  const clinic = useClinic();
+  const service = services?.find(s => treatmentFor(s).slug === slug);
   const t = service ? treatmentFor(service) : null;
-  usePageTitle(t ? `${t.name} in Kondapur` : 'Treatment');
+  useSeo(t
+    ? { title: t.seoTitle || t.name, description: t.seoDescription || t.tagline, image: t.image }
+    : { title: services ? 'Treatment not found' : 'Treatments', noindex: !!services });
 
   if (!services) return <div className="section" style={{ textAlign: 'center', color: 'var(--muted)' }}>Loading…</div>;
   if (!t) {
@@ -40,7 +41,7 @@ export default function TreatmentDetail() {
       <PageHero crumbs={[{ label: 'Treatments', to: '/treatments' }, { label: t.name }]} title={t.name} intro={t.tagline} icon={t.Icon}>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 26 }}>
           <button onClick={() => book(t.name)} className="btn btn-gold btn-lg"><LuCalendarCheck /> Book {t.name}</button>
-          <WhatsAppButton msg={service.whatsapp_message || `Hello, I'm interested in ${t.name} at Srini Physio Clinics.`} className="btn btn-ghost btn-lg">Ask on WhatsApp</WhatsAppButton>
+          <WhatsAppButton msg={service.whatsapp_message || `Hello, I'm interested in ${t.name} at ${clinic.name}.`} className="btn btn-ghost btn-lg">Ask on WhatsApp</WhatsAppButton>
         </div>
       </PageHero>
 
@@ -83,8 +84,8 @@ export default function TreatmentDetail() {
                 We'll check whether {t.name.toLowerCase()} suits you and build it into a plan with exercise and hands-on care.
               </p>
               <button onClick={() => book(t.name)} className="btn btn-navy btn-full"><LuCalendarCheck /> Book now</button>
-              <a href={MAP_LINK} target="_blank" rel="noopener" style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 16, color: 'var(--navy)', fontSize: '.88rem', fontWeight: 600 }}>
-                <LuMapPin color="var(--gold-dark)" /> {ADDRESS}
+              <a href={clinic.map_link} target="_blank" rel="noopener" style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 16, color: 'var(--navy)', fontSize: '.88rem', fontWeight: 600 }}>
+                <LuMapPin color="var(--gold-dark)" /> {clinic.address}
               </a>
             </div>
           </aside>

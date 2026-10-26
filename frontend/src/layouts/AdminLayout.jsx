@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   LuLayoutDashboard, LuUsers, LuCalendarDays, LuCalendarClock, LuMessageSquare, LuStethoscope,
-  LuHeartPulse, LuUserCog, LuLogOut, LuPanelLeftClose, LuPanelLeftOpen, LuGlobe, LuMonitor, LuMenu,
+  LuHeartPulse, LuUserCog, LuLogOut, LuNewspaper, LuPanelsTopLeft, LuPanelLeftClose, LuPanelLeftOpen, LuGlobe, LuMonitor, LuMenu,
 } from 'react-icons/lu';
 import { useAuth } from '../context/AuthContext';
 import API from '../api/client';
@@ -22,6 +22,10 @@ const NAV = [
     { to: 'doctors', icon: LuStethoscope, label: 'Doctors' },
     { to: 'services', icon: LuHeartPulse, label: 'Services' },
     { to: 'staff', icon: LuUserCog, label: 'Staff', admin: true },
+  ] },
+  { group: 'Website', items: [
+    { to: 'blog', icon: LuNewspaper, label: 'Blog' },
+    { to: 'content', icon: LuPanelsTopLeft, label: 'Website content', admin: true },
   ] },
 ];
 

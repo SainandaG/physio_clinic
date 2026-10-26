@@ -33,4 +33,9 @@ services:
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: "60"
       - key: WHATSAPP_NUMBER
-        value: "917702225124"
+        value: "918019141096"
+      # WhatsApp Business Cloud API — fill these in to send treatment summaries automatically
+      - key: WHATSAPP_API_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false

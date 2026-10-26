@@ -1,26 +1,16 @@
 import React, { useState } from 'react';
-import { LuMapPin, LuCalendarCheck, LuNavigation, LuClock, LuPlus, LuMinus } from 'react-icons/lu';
+import { LuMapPin, LuCalendarCheck, LuNavigation, LuClock, LuPlus, LuMinus, LuMail } from 'react-icons/lu';
 import { TbBrandWhatsapp } from 'react-icons/tb';
 import useDoctors from '../../utils/useDoctors';
 import {
-  usePageTitle, useBooking, PageHero, SectionHeading, NextSlotCard,
-  waHref, WA_DISPLAY, MAP_LINK, ADDRESS,
+  useSeo, useContent, useClinic, useBooking, PageHero, SectionHeading, NextSlotCard,
 } from '../../site/shared';
 
-const FAQS = [
-  ['Do I need to be a professional athlete?', 'No. We see athletes and active people at every level — recreational players, gym-goers, runners and people returning to exercise.'],
-  ['Which treatment is right for my pain?', 'It depends on your symptoms, history and assessment. We recommend the right combination after evaluating you — not every treatment suits everyone.'],
-  ['Can I come in with a sports injury?', 'Yes. Book an assessment or message us on WhatsApp. Severe pain, a suspected fracture or a serious injury may need urgent medical attention first.'],
-  ['What should I bring?', 'Wear comfortable clothing. Bring any scan reports, prescriptions or previous treatment notes, and a note of when your symptoms started.'],
-  ['How do I book or reschedule?', 'Use the booking form to pick a free slot, or message us on WhatsApp. We confirm every appointment on WhatsApp, and you can reply there to reschedule.'],
-  ['Is there parking nearby?', 'Message us on WhatsApp for the latest parking information near Masid Banda, Kondapur.'],
-];
-
-function Faq() {
+function Faq({ faqs }) {
   const [open, setOpen] = useState(0);
   return (
     <div>
-      {FAQS.map(([q, a], i) => (
+      {faqs.map(({ question: q, answer: a }, i) => (
         <div key={q} style={{ borderBottom: '1px solid var(--line)' }}>
           <button onClick={() => setOpen(open === i ? null : i)} aria-expanded={open === i}
             style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, padding: '20px 0', background: 'none', textAlign: 'left', fontWeight: 800, fontSize: '1rem', color: 'var(--navy)' }}>
@@ -35,7 +25,9 @@ function Faq() {
 }
 
 export default function Contact() {
-  usePageTitle('Contact & Booking');
+  const { contact } = useContent();
+  const clinic = useClinic();
+  useSeo({ title: contact.seo_title || 'Contact', description: contact.seo_description });
   const book = useBooking();
   const { doctors, lead } = useDoctors();
   const timings = (doctors.length ? doctors : [lead]).find(d => d.available_days || d.timings);
@@ -47,28 +39,28 @@ export default function Contact() {
         <div style={{ fontSize: '.75rem', fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--muted)' }}>{label}</div>
         <div style={{ fontWeight: 800, color: 'var(--navy)', fontSize: '1.02rem' }}>{value}</div>
       </div>
-      {href && <a href={href} target="_blank" rel="noopener" className="btn btn-outline btn-sm">{cta}</a>}
+      {href && <a href={href} {...(href.startsWith('mailto:') ? {} : { target: '_blank', rel: 'noopener' })} className="btn btn-outline btn-sm">{cta}</a>}
     </div>
   );
 
   return (
     <>
-      <PageHero crumbs={[{ label: 'Contact' }]} title="Book a visit"
-        intro="Choose a free slot online, or message us on WhatsApp — we'll confirm your appointment there." />
+      <PageHero crumbs={[{ label: 'Contact' }]} title={contact.hero_title} intro={contact.hero_intro} />
 
       <section className="section" style={{ background: 'var(--paper)' }}>
         <div className="wrap grid-2" style={{ alignItems: 'start' }}>
           <div style={{ display: 'grid', gap: 14 }}>
-            {tile(LuMapPin, 'Clinic', ADDRESS, MAP_LINK, <><LuNavigation /> Directions</>)}
-            {tile(TbBrandWhatsapp, 'WhatsApp', WA_DISPLAY, waHref('Hello! I would like to book an appointment at Srini Physio Clinics.'), 'Chat')}
-            {tile(LuClock, 'Timings', timings ? [timings.available_days, timings.timings].filter(Boolean).join(' · ') : 'See live slots in the booking form')}
+            {tile(LuMapPin, 'Clinic', clinic.address, clinic.map_link, <><LuNavigation /> Directions</>)}
+            {tile(TbBrandWhatsapp, 'WhatsApp', clinic.phone_display, clinic.waHref(`Hello! I would like to book an appointment at ${clinic.name}.`), 'Chat')}
+            {tile(LuClock, 'Timings', clinic.opening_hours || (timings ? [timings.available_days, timings.timings].filter(Boolean).join(' · ') : 'See live slots in the booking form'))}
+            {clinic.email && tile(LuMail, 'Email', clinic.email, `mailto:${clinic.email}`, 'Email')}
           </div>
 
           <div style={{ background: 'var(--white)', borderRadius: 28, padding: 32, boxShadow: 'var(--shadow-lg)', border: '1px solid var(--line)' }}>
             <img src="/brand/logo-mark.png" alt="" aria-hidden="true" style={{ width: 84, marginBottom: 14 }} />
-            <h2 style={{ fontFamily: 'Manrope', fontWeight: 900, color: 'var(--navy)', fontSize: '1.6rem', letterSpacing: '-.03em' }}>Book an assessment</h2>
+            <h2 style={{ fontFamily: 'Manrope', fontWeight: 900, color: 'var(--navy)', fontSize: '1.6rem', letterSpacing: '-.03em' }}>{contact.booking_title}</h2>
             <p style={{ color: 'var(--muted)', margin: '8px 0 20px', lineHeight: 1.6 }}>
-              Takes about a minute: pick a time, tell us how you're feeling, and send it on WhatsApp.
+              {contact.booking_text}
             </p>
             <NextSlotCard compact />
             <button onClick={() => book()} className="btn btn-navy btn-lg btn-full" style={{ marginTop: 16 }}><LuCalendarCheck /> Open booking form</button>
@@ -78,9 +70,8 @@ export default function Contact() {
 
       <section className="section" style={{ background: 'var(--white)' }}>
         <div className="wrap grid-2" style={{ alignItems: 'start' }}>
-          <SectionHeading eyebrow="Good to know" title="Questions before you visit?"
-            intro="Not sure which treatment you need? That's fine — start with an assessment rather than choosing a technique yourself." />
-          <Faq />
+          <SectionHeading eyebrow="Good to know" title={contact.faq_title} intro={contact.faq_intro} />
+          <Faq faqs={contact.faqs} />
         </div>
       </section>
     </>
