@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const API = axios.create({ baseURL: '' });
+// Same site by default (backend serves the app). When the frontend is deployed on its own,
+// VITE_API_URL is set at build time to the backend's address, e.g. https://srini-physio-api.onrender.com
+export const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+
+const API = axios.create({ baseURL: API_URL });
 
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');

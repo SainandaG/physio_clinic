@@ -91,6 +91,11 @@ class TestPdf:
         assert "no-store" in r.headers["cache-control"]
         assert r.headers["content-disposition"].startswith('inline; filename="Treatment-summary-Ravi-Kumar-')
 
+    def test_pdf_links_stay_on_the_backend_when_the_website_is_elsewhere(self, client, admin, appt, monkeypatch):
+        monkeypatch.setattr(settings, "SITE_URL", "https://sriniphysio.in")   # frontend deployed separately
+        s = client.post(f"/api/summaries/for-appointment/{appt['id']}", headers=admin).json()
+        assert s["url"].startswith("http://testserver/api/documents/")
+
     def test_download_option(self, client, admin, appt):
         s = client.post(f"/api/summaries/for-appointment/{appt['id']}", headers=admin).json()
         r = client.get(s["url"].replace("http://testserver", "") + "?download=true")

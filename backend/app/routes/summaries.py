@@ -14,7 +14,7 @@ from app.models.service import Appointment
 from app.models.summary import TreatmentSummary
 from app.routes.website import load_content
 from app.schemas import SummaryIn, SummaryOut
-from app.seo import site_url
+from app.seo import api_url
 from app.slots import CLINIC_TZ
 from app import whatsapp
 
@@ -92,7 +92,7 @@ def after_completion(db: Session, appt: Appointment, user_id: int, request: Requ
     s = summary_for_appointment(db, appt, user_id, auto=True)
     db.commit()
     if load_content(db)["letterhead"]["auto_send"] == "yes" and whatsapp.api_configured():
-        background.add_task(auto_send_in_background, s.id, site_url(request))
+        background.add_task(auto_send_in_background, s.id, api_url(request))
 
 
 # ── Staff ────────────────────────────────────────────────────────────────────
@@ -105,7 +105,7 @@ def list_summaries(request: Request, appointment_id: Optional[int] = None, patie
         q = q.filter(TreatmentSummary.appointment_id == appointment_id)
     if patient_id:
         q = q.filter(TreatmentSummary.patient_id == patient_id)
-    base = site_url(request)
+    base = api_url(request)
     return [_out(s, base) for s in q.order_by(TreatmentSummary.created_at.desc()).limit(200).all()]
 
 
@@ -122,7 +122,7 @@ def open_for_appointment(appt_id: int, request: Request, db: Session = Depends(g
         raise HTTPException(status_code=404, detail="Appointment not found")
     s = summary_for_appointment(db, appt, current_user.id)
     db.commit()
-    return _out(_load(db, s.id), site_url(request))
+    return _out(_load(db, s.id), api_url(request))
 
 
 @router.put("/{summary_id}", response_model=SummaryOut)
@@ -134,14 +134,14 @@ def update_summary(summary_id: int, data: SummaryIn, request: Request, db: Sessi
     for field, value in values.items():
         setattr(s, field, value.strip() if isinstance(value, str) else value)
     db.commit()
-    return _out(_load(db, summary_id), site_url(request))
+    return _out(_load(db, summary_id), api_url(request))
 
 
 @router.post("/{summary_id}/send")
 def send_summary(summary_id: int, request: Request, db: Session = Depends(get_db), _=Depends(get_current_user)):
     """Automatic send through the Business API when configured; otherwise a WhatsApp link to open."""
     s = _load(db, summary_id)
-    base = site_url(request)
+    base = api_url(request)
     if whatsapp.api_configured():
         error = deliver(db, s, base)
         if error:

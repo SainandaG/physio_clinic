@@ -4,7 +4,7 @@ import {
   LuBuilding2, LuHouse, LuInfo, LuHeartPulse, LuPhone, LuNewspaper, LuSearch, LuExternalLink, LuRotateCcw,
   LuPlus, LuTrash2, LuArrowUp, LuArrowDown, LuSave, LuFileText,
 } from 'react-icons/lu';
-import API from '../../api/client';
+import API, { API_URL } from '../../api/client';
 import SeoFields from '../../components/SeoFields';
 import { errorMessage } from '../../utils/slots';
 
@@ -189,7 +189,7 @@ export default function SiteContent() {
             <button key={key} className={active === key ? 'on' : ''} onClick={() => pick(key)}><Icon /> {label}</button>
           ))}
           <div className="cms-nav-foot">
-            <a href="/sitemap.xml" target="_blank" rel="noopener">Sitemap for Google <LuExternalLink /></a>
+            <a href={`${API_URL}/sitemap.xml`} target="_blank" rel="noopener">Sitemap for Google <LuExternalLink /></a>
           </div>
         </nav>
 

@@ -24,8 +24,8 @@ def overview(request: Request, db: Session = Depends(get_db), account=Depends(re
     from app.models.summary import TreatmentSummary
     from app.routes.summaries import document_url
     from app.routes.website import load_content
-    from app.seo import site_url
-    base, title = site_url(request), load_content(db)["letterhead"]["document_title"]
+    from app.seo import api_url
+    base, title = api_url(request), load_content(db)["letterhead"]["document_title"]
     summaries = db.query(TreatmentSummary).filter(
         TreatmentSummary.patient_id == account.patient_id, TreatmentSummary.send_status.in_(("sent", "shared")),
     ).order_by(TreatmentSummary.created_at.desc()).all()

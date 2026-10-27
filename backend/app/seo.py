@@ -30,6 +30,12 @@ def site_url(request: Request) -> str:
     return (settings.SITE_URL or str(request.base_url)).rstrip("/")
 
 
+def api_url(request: Request) -> str:
+    """This server's own address — for files it serves itself (e.g. patients' PDFs), which stay on
+    the backend even when the website is deployed separately under SITE_URL."""
+    return str(request.base_url).rstrip("/")
+
+
 def _absolute(base: str, url: Optional[str]) -> Optional[str]:
     if not url:
         return None
