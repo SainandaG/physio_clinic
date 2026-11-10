@@ -287,3 +287,34 @@ class TestSeo:
         page = render_index("<html><head><title>x</title></head><body></body></html>", meta, content)
         assert "<script>alert(1)" not in page
         assert "<img src=x" not in page
+
+
+class TestLocalBusinessData:
+    def test_address_is_split_for_google(self):
+        from app.seo import postal_address
+        a = postal_address("1st Floor, GVR Sapphire, Above Masjid Banda, Kondapur, Hyderabad, Telangana 500084")
+        assert a["streetAddress"] == "1st Floor, GVR Sapphire, Above Masjid Banda, Kondapur"
+        assert (a["addressLocality"], a["addressRegion"], a["postalCode"], a["addressCountry"]) == ("Hyderabad", "Telangana", "500084", "IN")
+
+    @pytest.mark.parametrize("text,spec", [
+        ("Mon–Sat 9 AM – 8 PM", "Mo-Sa 09:00-20:00"), ("Mon-Fri 9:30 AM - 7 PM", "Mo-Fr 09:30-19:00"),
+        ("By appointment", None), ("", None),
+    ])
+    def test_opening_hours(self, text, spec):
+        from app.seo import opening_hours_spec
+        assert opening_hours_spec(text) == spec
+
+    def test_clinic_data_has_phone_address_and_hours(self, client):
+        meta, _ = meta_for("/contact")
+        clinic = meta["jsonld"][0]
+        assert clinic["telephone"] == "+91 80191 41096"
+        assert clinic["address"]["postalCode"] == "500084"
+        assert clinic["openingHours"] == "Mo-Sa 09:00-20:00"
+
+    def test_static_fallback_tags_are_replaced_by_page_tags(self, client):
+        index = ('<html><head><title>Static</title><!-- static-seo --><script type="application/ld+json">{"static": 1}</script>'
+                 '<!-- /static-seo --></head><body><div id="root">Srini Physio Clinics +91 80191 41096</div></body></html>')
+        meta, content = meta_for("/about")
+        page = render_index(index, meta, content)
+        assert '{"static": 1}' not in page and page.count("<title>") == 1
+        assert "+91 80191 41096" in page   # plain-text fallback in the body stays

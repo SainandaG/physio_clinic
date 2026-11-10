@@ -65,7 +65,7 @@ export default function Enquiries() {
     const doctor = doctorOf(doctor_id || e.doctor_id).name;
     const msg = moved
       ? `Hello ${e.name}, thank you for booking with Srini Physio Clinics. Unfortunately ${e.preferred_slot || 'your requested slot'} on ${e.preferred_date ? prettyDate(e.preferred_date) : 'your chosen date'} is no longer available, so we have reserved ${slot} on ${prettyDate(date)} for you with ${doctor}. Please reply to confirm, or let us know a time that suits you better.`
-      : `Hello ${e.name}, your appointment at Srini Physio Clinics is confirmed for ${prettyDate(date)} at ${slot} with ${doctor}. Location: Masid Banda, Kondapur. Reply here if you need to reschedule.`;
+      : `Hello ${e.name}, your appointment at Srini Physio Clinics is confirmed for ${prettyDate(date)} at ${slot} with ${doctor}. Location: Masjid Banda, Kondapur. Reply here if you need to reschedule.`;
     return waTo(e.phone, msg);
   };
 

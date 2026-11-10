@@ -65,6 +65,47 @@ def _live_posts(db: Session):
     )
 
 
+def postal_address(address: str) -> dict:
+    """'1st Floor, GVR Sapphire, Above Masjid Banda, Kondapur, Hyderabad, Telangana 500084' → schema.org
+    PostalAddress. City, state and PIN code are split off when present so Google can match them."""
+    parts = [p.strip() for p in (address or "").split(",") if p.strip()]
+    pin = None
+    if parts:
+        m = re.search(r"\b(\d{6})\b", parts[-1])
+        if m:
+            pin = m.group(1)
+            parts[-1] = parts[-1].replace(pin, "").strip(" -")
+            if not parts[-1]:
+                parts.pop()
+    if parts and parts[-1].lower() == "telangana":
+        parts.pop()
+    if parts and parts[-1].lower() == "hyderabad":
+        parts.pop()
+    out = {"@type": "PostalAddress", "streetAddress": ", ".join(parts) or address,
+           "addressLocality": "Hyderabad", "addressRegion": "Telangana", "addressCountry": "IN"}
+    if pin:
+        out["postalCode"] = pin
+    return out
+
+
+DAY_CODES = {"mon": "Mo", "tue": "Tu", "wed": "We", "thu": "Th", "fri": "Fr", "sat": "Sa", "sun": "Su"}
+
+
+def opening_hours_spec(text: str) -> Optional[str]:
+    """'Mon–Sat 9 AM – 8 PM' → 'Mo-Sa 09:00-20:00' (schema.org openingHours); None if it can't be read."""
+    m = re.match(r"\s*([A-Za-z]{3})\w*\s*[–-]\s*([A-Za-z]{3})\w*\s+(\d{1,2})(?::(\d{2}))?\s*([AP]M)\s*[–-]\s*(\d{1,2})(?::(\d{2}))?\s*([AP]M)",
+                 text or "", re.I)
+    if not m or m.group(1).lower() not in DAY_CODES or m.group(2).lower() not in DAY_CODES:
+        return None
+
+    def hhmm(h, mins, ampm):
+        h = int(h) % 12 + (12 if ampm.upper() == "PM" else 0)
+        return f"{h:02d}:{mins or '00'}"
+
+    return (f"{DAY_CODES[m.group(1).lower()]}-{DAY_CODES[m.group(2).lower()]} "
+            f"{hhmm(m.group(3), m.group(4), m.group(5))}-{hhmm(m.group(6), m.group(7), m.group(8))}")
+
+
 def clinic_jsonld(content: dict, base: str, db: Session) -> dict:
     clinic, seo = content["clinic"], content["seo"]
     lead = db.query(Doctor).filter(Doctor.is_active == True).order_by(Doctor.display_order, Doctor.id).first()
@@ -78,9 +119,9 @@ def clinic_jsonld(content: dict, base: str, db: Session) -> dict:
         "description": seo["default_description"],
         "telephone": clinic["phone_display"] or None,
         "email": clinic["email"] or None,
-        "address": {"@type": "PostalAddress", "streetAddress": clinic["address"],
-                    "addressLocality": "Hyderabad", "addressRegion": "Telangana", "addressCountry": "IN"},
+        "address": postal_address(clinic["address"]),
         "hasMap": clinic["map_link"] or None,
+        "openingHours": opening_hours_spec(clinic["opening_hours"]),
         "medicalSpecialty": "Physiotherapy",
         "availableService": [{"@type": "MedicalTherapy", "name": s.name} for s in _services(db)],
     }
@@ -205,7 +246,9 @@ def _safe_json(data) -> str:
 
 def render_index(index_html: str, meta: dict, content: dict) -> str:
     """index.html with this page's head tags, and the site content preloaded for the app."""
-    page = re.sub(r"<title>.*?</title>\s*", "", index_html, flags=re.S)
+    # index.html carries static fallback SEO tags for static hosting; the per-page ones below replace them
+    page = re.sub(r"<!-- static-seo -->.*?<!-- /static-seo -->\s*", "", index_html, flags=re.S)
+    page = re.sub(r"<title>.*?</title>\s*", "", page, flags=re.S)
     page = re.sub(r'<meta\s+name="description"[^>]*>\s*', "", page)
     preload = f"<script>window.__SITE_CONTENT__ = {_safe_json(content)};</script>"
     return page.replace("</head>", f"    {head_tags(meta, content)}\n    {preload}\n  </head>", 1)

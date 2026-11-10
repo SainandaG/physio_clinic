@@ -1,7 +1,7 @@
 // Shared admin helpers: labels, WhatsApp templates and CSV export
 import { prettyDate } from './slots';
 
-export const CLINIC_LOCATION = 'Masid Banda, Kondapur, Hyderabad';
+export const CLINIC_LOCATION = 'Masjid Banda, Kondapur, Hyderabad';
 
 export const STATUS_LABELS = {
   pending: 'Pending', confirmed: 'Confirmed', checked_in: 'Checked-in',
