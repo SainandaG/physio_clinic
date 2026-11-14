@@ -122,6 +122,9 @@ def clinic_jsonld(content: dict, base: str, db: Session) -> dict:
         "address": postal_address(clinic["address"]),
         "hasMap": clinic["map_link"] or None,
         "openingHours": opening_hours_spec(clinic["opening_hours"]),
+        "sameAs": [f"https://wa.me/{clinic['whatsapp_number']}"] if clinic["whatsapp_number"] else None,
+        "contactPoint": {"@type": "ContactPoint", "contactType": "appointments", "telephone": clinic["phone_display"],
+                         "url": f"https://wa.me/{clinic['whatsapp_number']}"} if clinic["whatsapp_number"] else None,
         "medicalSpecialty": "Physiotherapy",
         "availableService": [{"@type": "MedicalTherapy", "name": s.name} for s in _services(db)],
     }
