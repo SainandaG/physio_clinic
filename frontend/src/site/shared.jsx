@@ -7,7 +7,7 @@ import API from '../api/client';
 import BookingModal from '../components/BookingModal';
 import { FALLBACK_SERVICES, treatmentFor } from '../content/treatments';
 import { clinicToday, prettyDate } from '../utils/slots';
-import { useClinic, useContent, useSeo } from './content';
+import { useClinic, useContent, useSeo, bakedData } from './content';
 
 export { useClinic, useContent, useSeo };
 
@@ -29,9 +29,9 @@ export function BookingProvider({ children }) {
 
 // ── Data hooks ───────────────────────────────────────────────────────────────
 export function useServices() {
-  const [services, setServices] = useState(null);
+  const [services, setServices] = useState(() => bakedData('services'));
   useEffect(() => {
-    API.get('/api/services').then(r => setServices(r.data)).catch(() => setServices(FALLBACK_SERVICES));
+    API.get('/api/services').then(r => setServices(r.data)).catch(() => setServices(s => s || FALLBACK_SERVICES));
   }, []);
   return services;
 }

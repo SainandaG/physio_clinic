@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import API from '../api/client';
+import { bakedData } from '../site/content';
 
 // Fallback so the website still names the clinic's physiotherapist if the API is unreachable
 export const LEAD_DOCTOR_FALLBACK = { id: null, name: 'Dr Tharun', qualification: 'MPT (Sports & Manual Therapy)' };
@@ -8,7 +9,7 @@ export const doctorLabel = (d) => (d ? [d.name, d.qualification].filter(Boolean)
 
 // Active doctors, lead doctor first. Pickers only need to appear when there is more than one.
 export default function useDoctors() {
-  const [doctors, setDoctors] = useState([]);
+  const [doctors, setDoctors] = useState(() => bakedData('doctors') || []);
   useEffect(() => {
     API.get('/api/doctors').then(r => setDoctors(r.data)).catch(() => {});
   }, []);

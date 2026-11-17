@@ -1,17 +1,22 @@
 // Editable website wording (Admin → Website content) and per-page SEO tags.
-// In production the server preloads the content into the page (window.__SITE_CONTENT__)
-// together with each page's meta tags; in development it is fetched from the API.
+// The content is preloaded into the page when possible, so the site renders without waiting for the API:
+// by the backend when it serves the site (window.__SITE_CONTENT__), or at build time when the frontend
+// is deployed on its own (window.__SITE_DATA__, see scripts/bake-api-data.mjs). In development it is fetched.
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import API from '../api/client';
 
 const ContentContext = createContext(null);
 
+/** Data built into the page at deploy time (content, services, doctors), if any. */
+export const bakedData = (key) => (typeof window !== 'undefined' && window.__SITE_DATA__?.[key]) || null;
+
 export function SiteContentProvider({ children }) {
-  const [content, setContent] = useState(() => window.__SITE_CONTENT__ || null);
+  const [content, setContent] = useState(() => window.__SITE_CONTENT__ || bakedData('content'));
   const [failed, setFailed] = useState(false);
 
   const load = () => {
     setFailed(false);
+    // With preloaded content a failed refresh is harmless: keep showing what we have
     API.get('/api/content').then(r => setContent(r.data)).catch(() => setFailed(true));
   };
   // Refresh even when preloaded, so admins see their edits straight away
@@ -19,9 +24,14 @@ export function SiteContentProvider({ children }) {
 
   if (!content) {
     return (
-      <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center', justifyContent: 'center', color: 'var(--muted)' }}>
-        {failed ? <>Couldn't load the website. <button className="btn btn-navy btn-sm" onClick={load}>Try again</button></> : <div className="spinner" />}
-      </div>
+      <main style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center', justifyContent: 'center', color: 'var(--navy)', padding: 20, textAlign: 'center' }}>
+        {failed ? (
+          <>
+            <p style={{ fontWeight: 600 }}>The website is taking longer than usual to load.</p>
+            <button className="btn btn-navy btn-sm" onClick={load}>Try again</button>
+          </>
+        ) : <div className="spinner" role="status" aria-label="Loading" />}
+      </main>
     );
   }
   return <ContentContext.Provider value={content}>{children}</ContentContext.Provider>;
